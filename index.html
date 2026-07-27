@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGPU 3D Gaussian Splat Viewer</title>
+  </head>
+  <body>
+    <div id="ui-panel-container" class="ui-panel">
+      <h4 class="panel-heading">Quick Load</h4>
+      <div class="ui-row">
+          <label for="sh-degree-input" class="ui-label">SH Degree:</label>
+          <input type="number" id="sh-degree-input" value="3" min="0" max="4" class="ui-input">
+      </div>
+      <div class="ui-row">
+          <label for="sort-select" class="ui-label">Sort:</label>
+          <select id="sort-select" class="ui-select">
+              <option value="none" selected>none</option>
+              <option value="morton">morton</option>
+          </select>
+      </div>
+    <div class="ui-row">
+      <label for="renderer-select" class="ui-label">Renderer:</label>
+      <select id="renderer-select" class="ui-select">
+        <option value="gaussian" selected>gaussian</option>
+        <option value="pointcloud">pointcloud</option>
+        <option value="tile_based">tile_based</option>
+      </select>
+    </div>
+    <div class="ui-row">
+      <label for="animation-checkbox" class="ui-label">Animate:</label>
+      <input type="checkbox" id="animation-checkbox" class="ui-checkbox">
+    </div>
+      <button id="load-button" class="ui-button">📂 Load Model from Disk</button>
+      <div id="quick-links" class="ui-links">
+          <!-- Links will be dynamically generated here -->
+      </div>
+    </div>
+
+    <!-- Evaluation Panel -->
+    <div id="eval-panel" class="ui-panel eval-panel">
+      <h4 class="eval-heading">Evaluation</h4>
+      <div class="ui-row">
+        <label for="eval-scene" class="ui-label">Scene:</label>
+        <select id="eval-scene" class="ui-select">
+          <option value="bonsai">Bonsai</option>
+          <option value="bicycle">Bicycle</option>
+          <option value="garden" selected>Garden</option>
+          <option value="train">Train</option>
+          <option value="truck">Truck</option>
+          <option value="van_gogh_room">Van Gogh Room</option>
+          <option value="bicycle-c">Cleaned Bicycle</option>
+        </select>
+      </div>
+      <div class="ui-row">
+        <label for="eval-mode" class="ui-label">Eval Mode:</label>
+        <select id="eval-mode" class="ui-select">
+          <option value="0">view</option>
+          <option value="1">psnr</option>
+          <option value="2" selected>e2e perf</option>
+          <option value="3">breakdown perf</option>
+        </select>
+      </div>
+      <div class="ui-row">
+        <label for="eval-frames" class="ui-label">Eval Frames:</label>
+        <input type="number" id="eval-frames" value="500" min="1" class="ui-input eval-input-wide">
+      </div>
+      <div class="ui-row">
+        <label for="eval-warmup" class="ui-label">Eval Warmup:</label>
+        <input type="number" id="eval-warmup" value="100" min="0" class="ui-input eval-input-wide">
+      </div>
+      <div class="ui-row">
+        <label for="eval-config" class="ui-label">Bench Config:</label>
+        <select id="eval-config" class="ui-select">
+          <option value="FULL" selected>FULL</option>
+          <option value="-CULL">-CULL</option>
+          <option value="-RADIUS">-RADIUS</option>
+          <option value="-CULL-RADIUS">-CULL-RADIUS</option>
+        </select>
+      </div>
+      <div class="ui-row">
+        <label for="eval-clip-sh" class="ui-label">Clip SH Degree:</label>
+        <input type="number" id="eval-clip-sh" value="3" min="0" max="4" class="ui-input">
+      </div>
+      <div class="ui-row">
+        <label for="eval-device" class="ui-label">Bench Device:</label>
+        <select id="eval-device" class="ui-select">
+          <option value="" selected>Customize...</option>
+          <option value="RTX-3070">RTX 3070</option>
+          <option value="RTX-3070-F">RTX 3070 (F)</option>
+          <option value="MacBook-M4">MacBook Air M4</option>
+          <option value="MacBook-M4-S">MacBook Air M4 (S)</option>
+          <option value="MacBook-M1">MacBook Pro M1</option>
+          <option value="MX350">Nvidia MX350</option>
+          <option value="Intel-NUC">Intel NUC (iGPU)</option>
+          <option value="iPhone15PM-S">iPhone 15 Pro Max (S)</option>
+          <option value="iPhone17P-S">iPhone 17 Pro (S)</option>
+          <option value="Redmi-K70Pro">Redmi K70 Pro</option>
+          <option value="Oppo-FindX2">Oppo Find X2</option>
+        </select>
+        <input type="text" id="eval-device-custom" class="ui-input eval-input-wide" placeholder="Device name...">
+      </div>
+      <div class="ui-row">
+        <label for="eval-ply-precision" class="ui-label">PLY Precision:</label>
+        <select id="eval-ply-precision" class="ui-select">
+          <option value="f16" selected>f16</option>
+          <option value="f32">f32</option>
+        </select>
+      </div>
+      <div class="ui-row">
+        <label for="eval-f16-feature" class="ui-label">Enable F16:</label>
+        <input type="checkbox" id="eval-f16-feature" class="ui-checkbox" checked>
+      </div>
+      <div class="ui-row">
+        <label for="eval-animation" class="ui-label">Animate:</label>
+        <input type="checkbox" id="eval-animation" class="ui-checkbox">
+      </div>
+      <div class="ui-row">
+        <label for="eval-server" class="ui-label">Bench Server:</label>
+        <input type="text" id="eval-server" value="https://racknerd.anoa-qilin.ts.net:9876" class="ui-input eval-input-url">
+      </div>
+      <button id="eval-start" class="ui-button eval-button">🚀 Start Evaluation</button>
+    </div>
+
+    <div class="console">
+      <h4 id="title">WebGPU 3D Gaussian Splat Viewer</h4>
+      <div id="log"></div>
+    </div>
+    <canvas id="webgpu-canvas" />
+    <script type="module" src="./src/main.ts"></script>
+    <script>
+    (function() {
+      const sceneMap = {
+        bonsai:        { model: 'scenes/bonsai/bonsai_30000.ply',              cam: 'scenes/bonsai/cameras.json' },
+        bicycle:       { model: 'scenes/bicycle/bicycle_30000.ply',            cam: 'scenes/bicycle/cameras.json' },
+        garden:        { model: 'scenes/garden/garden_30000.ply',              cam: 'scenes/garden/cameras.json' },
+        train:         { model: 'scenes/train/train_30000.ply',                cam: 'scenes/train/cameras.json' },
+        truck:         { model: 'scenes/truck/truck_30000.ply',                cam: 'scenes/truck/cameras.json' },
+        van_gogh_room: { model: 'scenes/van_gogh_room/van_gogh_room.ply',      cam: 'scenes/van_gogh_room/cameras.json' },
+        'bicycle-c':   { model: 'scenes/bicycle/bicycle_30000.cleaned.ply',    cam: 'scenes/bicycle/cameras.json' },
+      };
+
+      const deviceSelect = document.getElementById('eval-device');
+      const deviceCustom = document.getElementById('eval-device-custom');
+
+      // Show/hide custom device input
+      function toggleCustomDevice() {
+        deviceCustom.style.display = deviceSelect.value === '' ? 'block' : 'none';
+      }
+      deviceSelect.addEventListener('change', toggleCustomDevice);
+      toggleCustomDevice();
+
+      document.getElementById('eval-start').addEventListener('click', function() {
+        const scene = document.getElementById('eval-scene').value;
+        const sceneInfo = sceneMap[scene];
+        const benchDevice = deviceSelect.value || deviceCustom.value || 'unknown';
+
+        const params = new URLSearchParams();
+        params.set('model_url', sceneInfo.model);
+        params.set('camera_url', sceneInfo.cam);
+        params.set('clip_sh_degree', document.getElementById('eval-clip-sh').value);
+        params.set('sort', 'none');
+        params.set('renderer', 'gaussian');
+        params.set('animation', document.getElementById('eval-animation').checked ? '1' : '0');
+        params.set('eval', document.getElementById('eval-mode').value);
+        params.set('eval_frames', document.getElementById('eval-frames').value);
+        params.set('eval_warmup', document.getElementById('eval-warmup').value);
+        params.set('bench_device', benchDevice);
+        params.set('bench_scene', scene);
+        params.set('bench_config', document.getElementById('eval-config').value);
+        params.set('ply_precision', document.getElementById('eval-ply-precision').value);
+        params.set('enable_f16_feature', document.getElementById('eval-f16-feature').checked ? '1' : '0');
+        params.set('bench_server', document.getElementById('eval-server').value);
+
+        window.open('/?' + params.toString(), '_blank');
+      });
+    })();
+    </script>
+  </body>
+</html>

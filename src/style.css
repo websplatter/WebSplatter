@@ -1,0 +1,203 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.console {
+  position: absolute;
+  margin: 20px 20px;
+
+  & h1,h2,h3,h4 {
+    color:#000;
+    text-shadow: -1px -1px 0 #ccc, 1px -1px 0 #ccc, -1px 1px 0 #ccc, 1px 1px 0 #ccc;
+    margin: auto;
+  }
+
+  & #log {
+    color:#fff;
+    text-shadow: -1px -1px 0 #555, 1px -1px 0 #555, -1px 1px 0 #555, 1px 1px 0 #555;
+
+    & p {
+      font-size: 12px;
+      margin: 0.2em;
+    }
+  }
+}
+
+/* PLY loading spinner overlay */
+.ply-spinner-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  pointer-events: none; /* non-blocking */
+}
+
+.ply-spinner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: conic-gradient(#92AFD6, #C8DAE8);
+  animation: spin-ccw 1.0s linear infinite;
+  /* punch a hole to make a ring */
+  -webkit-mask: radial-gradient(farthest-side, transparent 60%, #000 61%);
+  mask: radial-gradient(farthest-side, transparent 60%, #000 61%);
+}
+
+.ply-spinner-label {
+  position: absolute;
+  top: calc(50% + 60px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: #1f5dae;
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  white-space: pre-line;
+  text-align: center;
+}
+
+@keyframes spin-ccw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+/* --- UI panel extracted from inline styles --- */
+.ui-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Card style for the main panel (matching eval-panel) */
+#ui-panel-container {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  max-width: 340px;
+}
+
+#ui-panel-container .panel-heading {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Tweakpane overrides when embedded in ui-panel-container */
+#ui-panel-container .tp-dfwv {
+  position: static !important;
+  width: 100% !important;
+}
+
+#ui-panel-container .tp-rotv {
+  box-shadow: none;
+}
+
+.ui-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-label {
+  font-size: 14px;
+}
+
+.ui-input,
+.ui-select {
+  padding: 4px;
+}
+
+.ui-input {
+  width: 60px;
+}
+
+.ui-button {
+  padding: 10px 16px;
+  font-size: 16px;
+}
+
+.ui-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ui-link {
+  display: inline-block;
+  padding: 8px 14px;
+  font-size: 14px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #000;
+}
+
+/* --- Evaluation panel --- */
+.eval-panel {
+  right: 20px;
+  left: auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  max-width: 380px;
+}
+
+.eval-heading {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.eval-panel .ui-label {
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.eval-panel .ui-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.eval-input-wide {
+  width: 90px;
+}
+
+.eval-input-url {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.eval-button {
+  width: 100%;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.eval-button:hover {
+  background: #1d4ed8;
+}
