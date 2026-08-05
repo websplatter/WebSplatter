@@ -1,13 +1,22 @@
-# WebSplatter: Enabling Cross-Device Efficient Gaussian Splatting in Web Browsers via WebGPU 🚀
+# WebSplatter: Efficient and Faithful In-Browser 3D Gaussian Splatting across Devices via WebGPU 🚀
 
-This repository is for the paper, **"WebSplatter: Enabling Cross-Device Efficient Gaussian Splatting in Web Browsers via WebGPU"**.
+[**🌐 Live Demo**](https://websplatter.github.io) · [**📄 arXiv**](https://arxiv.org/abs/2602.03207) · [**💻 Code**](https://github.com/yudshj/WebSplatter)
+
+> Accepted to **ACM Multimedia 2026** (the 35th ACM International Conference on Multimedia).
+
+WebSplatter is a WebGPU-native rendering framework for 3D Gaussian Splatting (3DGS) in the browser. Existing web viewers port CUDA-era pipelines whose synchronization and memory patterns do not generalize across GPU architectures, which causes rendering failures on non-NVIDIA and mobile devices. WebSplatter eliminates both failure modes with a **wait-free radix sort** and a **hardware-accelerated rasterization pipeline** with opacity-aware quad sizing.
+
+Evaluated across **eleven devices spanning five GPU architectures** (NVIDIA, Apple, Intel, AMD, Qualcomm), WebSplatter renders every benchmark scene on every tested device without failure, delivering 1.1×–2.5× speedups over the surviving baselines at near-lossless fidelity to the native CUDA renderer (average ΔPSNR 0.07 dB).
 
 ## Live Demo 🌐
 
 Try WebSplatter directly in your browser — no installation required:
 
-- [**Interactive Demo (Van Gogh Room scene)**](https://anonymous.4open.science/w/webgs/?model_url=scenes%2Fvan_gogh_room%2Fvan_gogh_room.ply&camera_url=scenes%2Fvan_gogh_room%2Fcameras.json&clip_sh_degree=3&sort=none&renderer=gaussian&animation=0) — loads a pre-configured scene for immediate viewing
-- [**Demo (Scene Selection)**](https://anonymous.4open.science/w/webgs/) — choose from multiple scenes or upload your own `.ply` / `.glb` model
+**[https://websplatter.github.io](https://websplatter.github.io)**
+
+The demo loads the *Van Gogh Room* scene (341K Gaussians) and runs on desktops, laptops, phones and handhelds alike. Drag to rotate, right-drag to translate, scroll to zoom.
+
+> Requires a browser with WebGPU enabled: Chrome 113+, Safari on iOS 26 / macOS 26, or Firefox 141+ (Windows only).
 
 ## Model Download 💾
 
@@ -85,3 +94,21 @@ npm run dev
 ```
 
 The application will be available in your web browser.
+
+## Citation 📚
+
+If you find WebSplatter useful in your research, please cite:
+
+```bibtex
+@inproceedings{han2026websplatter,
+  title={WebSplatter: Efficient and Faithful In-Browser 3D Gaussian Splatting across Devices via WebGPU},
+  author={Han, Yudong and Xu, Chao and Ye, Xiaodan and Bi, Weichen and Xu, Xuanhuai and Dong, Zilong and Ma, Yun},
+  booktitle={Proceedings of the 35th ACM International Conference on Multimedia},
+  year={2026},
+  doi={10.1145/3767308.3835220}
+}
+```
+
+## License 📄
+
+MIT — see [LICENSE](LICENSE).
