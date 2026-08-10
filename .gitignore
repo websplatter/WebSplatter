@@ -28,3 +28,4 @@ scenes/
 
 # Build output for GitHub Pages
 docs/
+dist-release/
