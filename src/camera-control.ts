@@ -8,6 +8,7 @@ export class CameraControl {
   private readonly movementSpeed = 1.0;
   private readonly boostMultiplier = 3.0;
   private readonly rotationSpeed = 1.0;
+  private readonly pointerLockSensitivity = 0.002;
 
   get enabled(): boolean {
     return this._enabled;
@@ -16,25 +17,29 @@ export class CameraControl {
   set enabled(value: boolean) {
     this._enabled = value;
     if (!value) {
-      this.clearKeys();
-      this.rotating = false;
-      this.panning = false;
+      this.clearInteractionState();
+      this.releasePointerLock();
     }
   }
 
   constructor(private camera: Camera) {
     this.register_element(camera.canvas);
+    document.addEventListener('mousemove', this.lockedMouseMoveCallback);
+    document.addEventListener('pointerlockchange', this.pointerLockChangeCallback);
+    window.addEventListener('blur', this.windowBlurCallback);
+    document.addEventListener('visibilitychange', this.visibilityChangeCallback);
   }
 
   register_element(value: HTMLCanvasElement) {
     if (this.element && this.element != value) {
+      if (document.pointerLockElement === this.element) document.exitPointerLock();
       this.element.removeEventListener('pointerdown', this.downCallback.bind(this));
       this.element.removeEventListener('pointermove', this.moveCallback.bind(this));
       this.element.removeEventListener('pointerup', this.upCallback.bind(this));
       this.element.removeEventListener('wheel', this.wheelCallback.bind(this));
       this.element.removeEventListener('keydown', this.keyDownCallback.bind(this));
       this.element.removeEventListener('keyup', this.keyUpCallback.bind(this));
-      this.element.removeEventListener('blur', this.clearKeys.bind(this));
+      this.element.removeEventListener('blur', this.canvasBlurCallback);
     }
 
     this.element = value;
@@ -44,13 +49,9 @@ export class CameraControl {
     this.element.addEventListener('wheel', this.wheelCallback.bind(this));
     this.element.addEventListener('keydown', this.keyDownCallback.bind(this));
     this.element.addEventListener('keyup', this.keyUpCallback.bind(this));
-    this.element.addEventListener('blur', this.clearKeys.bind(this));
+    this.element.addEventListener('blur', this.canvasBlurCallback);
     this.element.addEventListener('contextmenu', (e) => { e.preventDefault(); });
     this.element.tabIndex = 0;
-    window.addEventListener('blur', this.clearKeys.bind(this));
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this.clearKeys();
-    });
   }
 
   private panning = false;
@@ -58,9 +59,42 @@ export class CameraControl {
   private lastX: number;
   private lastY: number;
 
+  private readonly canvasBlurCallback = () => {
+    this.clearInteractionState();
+  };
+
+  private readonly windowBlurCallback = () => {
+    this.clearInteractionState();
+    this.releasePointerLock();
+  };
+
+  private readonly visibilityChangeCallback = () => {
+    if (!document.hidden) return;
+    this.clearInteractionState();
+    this.releasePointerLock();
+  };
+
+  private readonly pointerLockChangeCallback = () => {
+    if (this.isPointerLocked()) {
+      this.rotating = false;
+      this.panning = false;
+    } else {
+      this.clearInteractionState();
+    }
+  };
+
+  private readonly lockedMouseMoveCallback = (event: MouseEvent) => {
+    if (!this.enabled || !this.isPointerLocked()) return;
+    if (event.movementX === 0 && event.movementY === 0) return;
+    this.rotateRadians(
+      event.movementY * this.pointerLockSensitivity,
+      -event.movementX * this.pointerLockSensitivity,
+    );
+  };
+
   downCallback(event: PointerEvent) {
     this.element.focus({ preventScroll: true });
-    if (!this.enabled) return;
+    if (!this.enabled || this.isPointerLocked()) return;
     if (!event.isPrimary) {
       return;
     }
@@ -75,8 +109,9 @@ export class CameraControl {
     this.lastX = event.pageX;
     this.lastY = event.pageY;
   }
+
   moveCallback(event: PointerEvent) {
-    if (!this.enabled) return;
+    if (!this.enabled || this.isPointerLocked()) return;
     if (!(this.rotating || this.panning)) {
       return;
     }
@@ -92,11 +127,13 @@ export class CameraControl {
       this.pan(xDelta, yDelta);
     }
   }
+
   upCallback(event: PointerEvent) {
     this.rotating = false;
     this.panning = false;
     event.preventDefault();
   }
+
   wheelCallback(event: WheelEvent) {
     if (!this.enabled) return;
     event.preventDefault();
@@ -107,17 +144,24 @@ export class CameraControl {
 
   private isControlKey(code: string): boolean {
     return code === 'KeyW' || code === 'KeyA' || code === 'KeyS' || code === 'KeyD'
-      || code === 'ArrowUp' || code === 'ArrowLeft' || code === 'ArrowDown' || code === 'ArrowRight'
       || code === 'KeyQ' || code === 'KeyE';
   }
 
   private keyDownCallback(event: KeyboardEvent) {
+    if (!this.enabled || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    if (event.code === 'Backquote') {
+      if (event.repeat) return;
+      event.preventDefault();
+      this.togglePointerLock();
+      return;
+    }
+
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.pressedKeys.add(event.code);
       return;
     }
-    if (!this.enabled || !this.isControlKey(event.code)) return;
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!this.isControlKey(event.code)) return;
     this.pressedKeys.add(event.code);
     event.preventDefault();
   }
@@ -132,8 +176,30 @@ export class CameraControl {
     if (!event.ctrlKey && !event.metaKey && !event.altKey) event.preventDefault();
   }
 
-  private clearKeys() {
+  private isPointerLocked(): boolean {
+    return document.pointerLockElement === this.element;
+  }
+
+  private togglePointerLock(): void {
+    if (this.isPointerLocked()) {
+      document.exitPointerLock();
+      return;
+    }
+    const requestPointerLock = this.element.requestPointerLock;
+    if (typeof requestPointerLock !== 'function') return;
+    void Promise.resolve(requestPointerLock.call(this.element)).catch(() => {
+      // The viewer remains usable with drag controls if pointer lock is unavailable.
+    });
+  }
+
+  private releasePointerLock(): void {
+    if (this.isPointerLocked()) document.exitPointerLock();
+  }
+
+  private clearInteractionState(): void {
     this.pressedKeys.clear();
+    this.rotating = false;
+    this.panning = false;
   }
 
   update(deltaSeconds: number): boolean {
@@ -142,10 +208,8 @@ export class CameraControl {
     const forward = Number(this.pressedKeys.has('KeyW')) - Number(this.pressedKeys.has('KeyS'));
     // camera.right uses the renderer's view-space convention, whose positive direction is screen-left.
     const strafe = Number(this.pressedKeys.has('KeyA')) - Number(this.pressedKeys.has('KeyD'));
-    const pitch = Number(this.pressedKeys.has('ArrowDown')) - Number(this.pressedKeys.has('ArrowUp'));
-    const yaw = Number(this.pressedKeys.has('ArrowLeft')) - Number(this.pressedKeys.has('ArrowRight'));
     const roll = Number(this.pressedKeys.has('KeyQ')) - Number(this.pressedKeys.has('KeyE'));
-    if (forward === 0 && strafe === 0 && pitch === 0 && yaw === 0 && roll === 0) return false;
+    if (forward === 0 && strafe === 0 && roll === 0) return false;
 
     const dt = Math.min(Math.max(deltaSeconds, 0), 0.1);
     if (forward !== 0 || strafe !== 0) {
@@ -156,28 +220,21 @@ export class CameraControl {
       this.camera.position[1] += (this.camera.look[1] * forward + this.camera.right[1] * strafe) * distance;
       this.camera.position[2] += (this.camera.look[2] * forward + this.camera.right[2] * strafe) * distance;
     }
-    if (pitch !== 0 || yaw !== 0 || roll !== 0) {
-      const rotation = mat4.fromQuat(quat.fromEuler(
-        pitch * this.rotationSpeed * dt,
-        yaw * this.rotationSpeed * dt,
-        roll * this.rotationSpeed * dt,
-        'xyz',
-      ));
-      mat4.mul(rotation, this.camera.rotation, this.camera.rotation);
+    if (roll !== 0) {
+      this.rotateRadians(0, 0, roll * this.rotationSpeed * dt, false);
     }
     this.camera.update_buffer();
     return true;
   }
 
+  private rotateRadians(pitch: number, yaw: number, roll: number = 0, updateBuffer: boolean = true): void {
+    const rotation = mat4.fromQuat(quat.fromEuler(pitch, yaw, roll, 'xyz'));
+    mat4.mul(rotation, this.camera.rotation, this.camera.rotation);
+    if (updateBuffer) this.camera.update_buffer();
+  }
+
   rotate(xDelta: number, yDelta: number) {
-    // const r = mat4.identity();
-    // mat4.rotateY(r, -xDelta, r);
-    // mat4.rotateX(r, yDelta, r);
-    const r = mat4.fromQuat(quat.fromEuler(yDelta * 0.01, -xDelta * 0.01, 0, 'xyz'));
-
-    mat4.mul(r, this.camera.rotation, this.camera.rotation);
-
-    this.camera.update_buffer();
+    this.rotateRadians(yDelta * 0.01, -xDelta * 0.01);
   }
 
   pan(xDelta: number, yDelta: number) {

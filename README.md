@@ -14,7 +14,7 @@ Try WebSplatter directly in your browser — no installation required:
 
 **[https://websplatter.github.io](https://websplatter.github.io)**
 
-The demo loads the *Van Gogh Room* scene (341K Gaussians) and runs on desktops, laptops, phones and handhelds alike. Click the canvas to focus it, use **WASD** to move, **Shift** to move faster, the **arrow keys** to look around, and **Q/E** to roll. Drag to rotate, right-drag to translate, and scroll to zoom. Camera controls are disabled while animation is enabled.
+The demo loads the *Van Gogh Room* scene (341K Gaussians) and runs on desktops, laptops, phones and handhelds alike. Click the canvas to focus it, then press **`** to capture the mouse for FPS-style look controls. Use **WASD** to move, **Shift** to move faster, and **Q/E** to roll; press **Esc** or **`** to release the mouse. Drag to rotate, right-drag to translate, and scroll to zoom when the mouse is not captured. Camera controls are disabled while animation is enabled.
 
 > Requires a browser with WebGPU enabled: Chrome 113+, Safari on iOS 26 / macOS 26, or Firefox 141+ (Windows only).
 
