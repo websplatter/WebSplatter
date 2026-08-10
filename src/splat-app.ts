@@ -31,7 +31,6 @@ export interface Renderers {
 }
 
 export interface GaussianRenderers extends Renderers {
-    debugReadSortedIndices: (count: number) => Promise<void>,
     debugDumpPixelInputs: (px: number, py: number, width: number, height: number, limit?: number) => Promise<any>,
     maybeReorderAfterSubmit: () => Promise<void>,
     render_settings_buffer: GPUBuffer,
@@ -731,14 +730,6 @@ export default async function init(
                     console.log(`set to camera preset ${i}`);
                     applyCameraPreset(cameras[i]);
                     break;
-                case 'd':
-                case 'D':
-                    // Debug: output sorted indices (Gaussian renderer only)
-                    console.log('[DEBUG] Reading sorted indices...');
-                    getGaussian().debugReadSortedIndices(30).catch(error => {
-                        console.error('[DEBUG] Failed to read sorted indices:', error);
-                    });
-                    break;
             }
         });
 
@@ -770,6 +761,8 @@ export default async function init(
             const now = performance.now();
             const dt = (now - last_time)/1000;
             last_time = now;
+
+            control.update(dt);
 
             if (doRotate && !userInteracting) { // animation=1 or default
                 const speed = 0.2; // radians per second

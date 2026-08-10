@@ -573,35 +573,6 @@ export class GaussianRenderer implements GaussianRenderers {
     }
 
     /**
-     * Debug helper: read first N sorted indices and print them.
-     */
-    public async debugReadSortedIndices(count: number = 30): Promise<void> {
-        const maxCount = Math.max(0, Math.min(count, this.pc.num_points));
-        const bytes = maxCount * Uint32Array.BYTES_PER_ELEMENT;
-        if (bytes === 0) {
-            console.log('[DEBUG] No indices to read.');
-            return;
-        }
-        const readBuffer = this.device.createBuffer({
-            size: bytes,
-            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-        });
-        const encoder = this.device.createCommandEncoder();
-        encoder.copyBufferToBuffer(
-            this.sort_ping_pong[0].sort_indices_buffer,
-            0,
-            readBuffer,
-            0,
-            bytes
-        );
-        this.device.queue.submit([encoder.finish()]);
-        await readBuffer.mapAsync(GPUMapMode.READ);
-        const arr = new Uint32Array(readBuffer.getMappedRange());
-        console.log('[DEBUG] Sorted indices (first', maxCount, '):', Array.from(arr));
-        readBuffer.unmap();
-    }
-
-    /**
      * Read back real GPU buffers for one pixel and return only splats that overlap that pixel.
      * Uses the actual sorted draw order, compacted points_2d buffer, and colors buffer.
      */

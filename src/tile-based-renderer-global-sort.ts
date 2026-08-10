@@ -324,13 +324,6 @@ export class TileBasedRendererGlobalSort implements GaussianRenderers {
         window.debugPrintTileSplatCounts = this.debugPrintTileSplatCounts.bind(this);
     }
 
-    /**
-     * Debug helper: read first N sorted indices and print them.
-     */
-    public async debugReadSortedIndices(count: number = 30): Promise<void> {
-        console.log('[DEBUG] sorter removed');
-    }
-
     public async debugDumpPixelInputs(px: number, py: number, width: number, height: number, limit?: number) {
         throw new Error('debugDumpPixelInputs not implemented');
     }
