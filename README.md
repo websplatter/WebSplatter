@@ -14,7 +14,7 @@ Try WebSplatter directly in your browser — no installation required:
 
 **[https://websplatter.github.io](https://websplatter.github.io)**
 
-The demo loads the *Van Gogh Room* scene (341K Gaussians) and runs on desktops, laptops, phones and handhelds alike. Click the canvas to focus it, then press **`** to capture the mouse for FPS-style look controls. Use **WASD** to move, **Shift** to move faster, and **Q/E** to roll; press **Esc** or **`** to release the mouse. Drag to rotate, right-drag to translate, and scroll to zoom when the mouse is not captured. Camera controls are disabled while animation is enabled.
+The demo loads the *Van Gogh Room* scene (341K Gaussians) and runs on desktops, laptops, phones and handhelds alike. Click the canvas to focus it, then press **`** to capture the mouse for FPS-style look controls. Use **WASD** to move, **Space/Ctrl** to fly up/down, **Shift** to move faster, and **Q/E** to roll; press **R** to restore the initial camera pose and **Esc** or **`** to release the mouse. Drag to rotate, right-drag to translate, and scroll to zoom when the mouse is not captured. Camera controls are disabled while animation is enabled.
 
 The project page consumes this repository as a pinned Git submodule. Run `npm run build:release` to create the streamlined production viewer in `dist-release/`; that target keeps only the GLB/SPZ Gaussian rendering path and is separate from the full development build.
 

@@ -3,6 +3,9 @@ import init from './splat-app';
 import { assert } from '../utils/util';
 import { error } from './simple-console';
 
+const pageParams = new URLSearchParams(window.location.search);
+document.body.classList.toggle('debug-mode', pageParams.get('debug') === '1');
+
 async function start(): Promise<void> {
     if (!navigator.gpu) throw new Error('WebGPU is not supported in this browser.');
 

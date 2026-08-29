@@ -2,6 +2,10 @@ import './style.css'
 import init from './splat-app.ts';
 import { assert } from './utils/util';
 
+const pageParams = new URLSearchParams(window.location.search);
+document.body.classList.toggle('debug-mode', pageParams.get('debug') === '1');
+document.body.classList.toggle('viewer-mode', pageParams.has('model_url'));
+
 (async () => {
   if (navigator.gpu === undefined) {
     const h = document.querySelector('#title') as HTMLElement;
