@@ -164,6 +164,12 @@ export class Camera {
     vec3.transformMat4Upper3x3(vec3.create(0, 0, 1), inv_view_matrix, this.look);
     vec3.normalize(this.look, this.look);
 
+    // Keep the movement basis camera-relative. Projection flips Y, so visual
+    // camera-up is local -Y (local +Y moves toward the bottom of the screen).
+    // Space/Ctrl therefore follow -Y/+Y after pitch, yaw, or roll.
+    vec3.transformMat4Upper3x3(vec3.create(0, -1, 0), inv_view_matrix, this.up);
+    vec3.normalize(this.up, this.up);
+
     vec3.cross(this.up, this.look, this.right);
     vec3.normalize(this.right, this.right);
 

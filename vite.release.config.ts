@@ -26,8 +26,10 @@ function releaseRendererPlugin() {
     transform(source: string, id: string) {
       if (!id.endsWith('/src/gaussian-renderer.ts')) return null;
 
+      // Keep release stripping deterministic on Windows, where Vite may hand
+      // the plugin CRLF source while the markers intentionally use LF.
       let code = stripBetween(
-        source,
+        source.replace(/\r\n/g, '\n'),
         '    // --- Timestamp Query Resources',
         '    // --- Child Modules & Pipelines',
       );

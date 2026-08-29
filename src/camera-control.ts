@@ -4,6 +4,8 @@ import { Camera } from './camera';
 export class CameraControl {
   element: HTMLCanvasElement;
   private _enabled: boolean = true;
+  private readonly advancedControlsEnabled: boolean;
+  private readonly onResetCamera?: () => void;
   private readonly pressedKeys = new Set<string>();
   private readonly movementSpeed = 1.0;
   private readonly boostMultiplier = 3.0;
@@ -22,7 +24,12 @@ export class CameraControl {
     }
   }
 
-  constructor(private camera: Camera) {
+  constructor(
+    private camera: Camera,
+    options: { advanced?: boolean; onResetCamera?: () => void } = {},
+  ) {
+    this.advancedControlsEnabled = options.advanced === true;
+    this.onResetCamera = options.onResetCamera;
     this.register_element(camera.canvas);
     document.addEventListener('mousemove', this.lockedMouseMoveCallback);
     document.addEventListener('pointerlockchange', this.pointerLockChangeCallback);
@@ -75,7 +82,7 @@ export class CameraControl {
   };
 
   private readonly pointerLockChangeCallback = () => {
-    if (this.isPointerLocked()) {
+    if (this.isPointerCaptured()) {
       this.rotating = false;
       this.panning = false;
     } else {
@@ -84,7 +91,7 @@ export class CameraControl {
   };
 
   private readonly lockedMouseMoveCallback = (event: MouseEvent) => {
-    if (!this.enabled || !this.isPointerLocked()) return;
+    if (!this.enabled || !this.advancedControlsEnabled || !this.isPointerCaptured()) return;
     if (event.movementX === 0 && event.movementY === 0) return;
     this.rotateRadians(
       event.movementY * this.pointerLockSensitivity,
@@ -94,7 +101,7 @@ export class CameraControl {
 
   downCallback(event: PointerEvent) {
     this.element.focus({ preventScroll: true });
-    if (!this.enabled || this.isPointerLocked()) return;
+    if (!this.enabled || this.isPointerCaptured()) return;
     if (!event.isPrimary) {
       return;
     }
@@ -111,7 +118,7 @@ export class CameraControl {
   }
 
   moveCallback(event: PointerEvent) {
-    if (!this.enabled || this.isPointerLocked()) return;
+    if (!this.enabled || this.isPointerCaptured()) return;
     if (!(this.rotating || this.panning)) {
       return;
     }
@@ -144,16 +151,31 @@ export class CameraControl {
 
   private isControlKey(code: string): boolean {
     return code === 'KeyW' || code === 'KeyA' || code === 'KeyS' || code === 'KeyD'
-      || code === 'KeyQ' || code === 'KeyE';
+      || code === 'KeyQ' || code === 'KeyE' || code === 'Space'
+      || code === 'ControlLeft' || code === 'ControlRight';
   }
 
   private keyDownCallback(event: KeyboardEvent) {
-    if (!this.enabled || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!this.enabled || !this.advancedControlsEnabled || event.metaKey || event.altKey) return;
+
+    if (event.code === 'ControlLeft' || event.code === 'ControlRight') {
+      this.pressedKeys.add(event.code);
+      event.preventDefault();
+      return;
+    }
+    if (event.ctrlKey) return;
 
     if (event.code === 'Backquote') {
       if (event.repeat) return;
       event.preventDefault();
-      this.togglePointerLock();
+      this.togglePointerCapture();
+      return;
+    }
+
+    if (event.code === 'KeyR') {
+      if (event.repeat) return;
+      event.preventDefault();
+      this.onResetCamera?.();
       return;
     }
 
@@ -167,6 +189,7 @@ export class CameraControl {
   }
 
   private keyUpCallback(event: KeyboardEvent) {
+    if (!this.advancedControlsEnabled) return;
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
       this.pressedKeys.delete(event.code);
       return;
@@ -176,12 +199,13 @@ export class CameraControl {
     if (!event.ctrlKey && !event.metaKey && !event.altKey) event.preventDefault();
   }
 
-  private isPointerLocked(): boolean {
+  isPointerCaptured(): boolean {
     return document.pointerLockElement === this.element;
   }
 
-  private togglePointerLock(): void {
-    if (this.isPointerLocked()) {
+  togglePointerCapture(): void {
+    if (!this.enabled || !this.advancedControlsEnabled) return;
+    if (this.isPointerCaptured()) {
       document.exitPointerLock();
       return;
     }
@@ -193,7 +217,7 @@ export class CameraControl {
   }
 
   private releasePointerLock(): void {
-    if (this.isPointerLocked()) document.exitPointerLock();
+    if (this.isPointerCaptured()) document.exitPointerLock();
   }
 
   private clearInteractionState(): void {
@@ -203,22 +227,30 @@ export class CameraControl {
   }
 
   update(deltaSeconds: number): boolean {
-    if (!this.enabled || this.pressedKeys.size === 0) return false;
+    if (!this.enabled || !this.advancedControlsEnabled || this.pressedKeys.size === 0) return false;
 
     const forward = Number(this.pressedKeys.has('KeyW')) - Number(this.pressedKeys.has('KeyS'));
     // camera.right uses the renderer's view-space convention, whose positive direction is screen-left.
     const strafe = Number(this.pressedKeys.has('KeyA')) - Number(this.pressedKeys.has('KeyD'));
+    const vertical = Number(this.pressedKeys.has('Space'))
+      - Number(this.pressedKeys.has('ControlLeft') || this.pressedKeys.has('ControlRight'));
     const roll = Number(this.pressedKeys.has('KeyQ')) - Number(this.pressedKeys.has('KeyE'));
-    if (forward === 0 && strafe === 0 && roll === 0) return false;
+    if (forward === 0 && strafe === 0 && vertical === 0 && roll === 0) return false;
 
     const dt = Math.min(Math.max(deltaSeconds, 0), 0.1);
-    if (forward !== 0 || strafe !== 0) {
-      const length = Math.hypot(forward, strafe);
+    if (forward !== 0 || strafe !== 0 || vertical !== 0) {
+      const length = Math.hypot(forward, strafe, vertical);
       const boosted = this.pressedKeys.has('ShiftLeft') || this.pressedKeys.has('ShiftRight');
       const distance = this.movementSpeed * (boosted ? this.boostMultiplier : 1) * dt / length;
-      this.camera.position[0] += (this.camera.look[0] * forward + this.camera.right[0] * strafe) * distance;
-      this.camera.position[1] += (this.camera.look[1] * forward + this.camera.right[1] * strafe) * distance;
-      this.camera.position[2] += (this.camera.look[2] * forward + this.camera.right[2] * strafe) * distance;
+      this.camera.position[0] += (
+        this.camera.look[0] * forward + this.camera.right[0] * strafe + this.camera.up[0] * vertical
+      ) * distance;
+      this.camera.position[1] += (
+        this.camera.look[1] * forward + this.camera.right[1] * strafe + this.camera.up[1] * vertical
+      ) * distance;
+      this.camera.position[2] += (
+        this.camera.look[2] * forward + this.camera.right[2] * strafe + this.camera.up[2] * vertical
+      ) * distance;
     }
     if (roll !== 0) {
       this.rotateRadians(0, 0, roll * this.rotationSpeed * dt, false);

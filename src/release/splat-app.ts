@@ -2,6 +2,7 @@ import { Camera, load_camera_presets } from '../camera';
 import { CameraControl } from '../camera-control';
 import { GaussianRenderer } from '../gaussian-renderer';
 import { loadGltfFromURL } from '../gltf-loader';
+import { isDebugInteractionEnabled, setupDebugInteractions } from '../debug-interactions';
 
 const DEFAULT_MODEL_URL = '/demo/scenes/van_gogh_room/van_gogh_room_spz.glb';
 const DEFAULT_CAMERA_URL = 'scenes/van_gogh_room/cameras.json';
@@ -16,9 +17,14 @@ export default async function init(
     const modelUrl = params.get('model_url') ?? DEFAULT_MODEL_URL;
     const cameraUrl = params.get('camera_url') ?? DEFAULT_CAMERA_URL;
     const shDegree = Math.max(0, Math.min(4, Number.parseInt(params.get('clip_sh_degree') ?? '0', 10) || 0));
+    const debugModeEnabled = isDebugInteractionEnabled(params);
 
     const camera = new Camera(canvas, device);
-    const controls = new CameraControl(camera);
+    let resetCamera: (() => void) | undefined;
+    const controls = new CameraControl(camera, {
+        advanced: true,
+        onResetCamera: () => resetCamera?.(),
+    });
 
     const resize = () => {
         const dpr = window.devicePixelRatio || 1;
@@ -42,7 +48,15 @@ export default async function init(
 
     const cameras = await load_camera_presets(cameraUrl);
     if (cameras.length === 0) throw new Error('No camera presets are available.');
+    resetCamera = () => camera.set_preset(cameras[0]);
     camera.set_preset(cameras[0]);
+    if (debugModeEnabled) {
+        setupDebugInteractions({
+            canvas,
+            controls,
+            onResetCamera: resetCamera,
+        });
+    }
 
     const pointcloud = await loadGltfFromURL(modelUrl, device, shDegree, null);
     const renderer = new GaussianRenderer(

@@ -5,6 +5,7 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { loadFromFile, loadFromURL, PLYObject, PrecisionMode } from './ply-loader.ts';
 import { loadGltfFromFile, loadGltfFromURL } from './gltf-loader.ts';
+import { isDebugInteractionEnabled, setupDebugInteractions } from './debug-interactions.ts';
 
 type ModelFormat = 'ply' | 'gltf';
 
@@ -484,10 +485,14 @@ export default async function init(
     device: GPUDevice,
     features_list: GPUFeatureName[]
 ) {
-    const camera = new Camera(canvas, device);
-    const control = new CameraControl(camera);
-
     const paramsa = new URLSearchParams(window.location.search);
+    const debugModeEnabled = isDebugInteractionEnabled(paramsa);
+    const camera = new Camera(canvas, device);
+    let resetCamera: (() => void) | undefined;
+    const control = new CameraControl(camera, {
+        advanced: true,
+        onResetCamera: () => resetCamera?.(),
+    });
     const model_url = paramsa.get('model_url');
     const camera_url = paramsa.get('camera_url') ?? 'scenes/bicycle/cameras.json';
     const sh_degree_param = paramsa.get('clip_sh_degree') ?? '3';
@@ -558,7 +563,15 @@ export default async function init(
 
     // const url_base = '/scenes/bonsai';
     // const model_url = `${url_base}/bonsai_30000.ply`;
+    resetCamera = () => applyCameraPreset(cameras[0]);
     applyCameraPreset(cameras[0]);
+    if (debugModeEnabled) {
+        setupDebugInteractions({
+            canvas,
+            controls: control,
+            onResetCamera: resetCamera,
+        });
+    }
 
     // Tweakpane: easily adding tweak control for parameters.
     const params = {
@@ -714,7 +727,7 @@ export default async function init(
                 (renderer as GaussianRenderers).requestReorder();
             });
         }
-        document.addEventListener('keydown', (event) => {
+        if (debugModeEnabled) document.addEventListener('keydown', (event) => {
             switch (event.key) {
                 case '0':
                 case '1':
@@ -727,6 +740,7 @@ export default async function init(
                 case '8':
                 case '9':
                     const i = parseInt(event.key);
+                    if (!cameras[i]) return;
                     console.log(`set to camera preset ${i}`);
                     applyCameraPreset(cameras[i]);
                     break;

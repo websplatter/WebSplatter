@@ -4,6 +4,12 @@ body {
   margin: 0;
 }
 
+body.viewer-mode:not(.debug-mode) > .console,
+body.viewer-mode:not(.debug-mode) > #ui-panel-container,
+body.viewer-mode:not(.debug-mode) > #eval-panel {
+  display: none !important;
+}
+
 canvas {
   width: 100%;
   height: 100%;
@@ -200,4 +206,84 @@ canvas {
 
 .eval-button:hover {
   background: #1d4ed8;
+}
+
+/* --- Optional interaction HUD, enabled only by ?debug=1 --- */
+.debug-hud {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 2200;
+  width: min(430px, calc(100vw - 40px));
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.debug-hud__header,
+.debug-hud__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.debug-hud__header {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.debug-hud__status {
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.debug-hud__status--active {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.22);
+}
+
+.debug-hud__button {
+  flex: 1;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.debug-hud__button:hover,
+.debug-hud__button:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.debug-hud__help {
+  margin: 10px 0 0;
+  color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+  .debug-hud {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  .debug-hud__actions {
+    flex-wrap: wrap;
+  }
+
+  .debug-hud__button {
+    min-width: 120px;
+  }
 }
