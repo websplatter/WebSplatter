@@ -486,11 +486,11 @@ export default async function init(
     features_list: GPUFeatureName[]
 ) {
     const paramsa = new URLSearchParams(window.location.search);
-    const debugInteractionsEnabled = isDebugInteractionEnabled(paramsa);
+    const debugModeEnabled = isDebugInteractionEnabled(paramsa);
     const camera = new Camera(canvas, device);
     let resetCamera: (() => void) | undefined;
     const control = new CameraControl(camera, {
-        advanced: debugInteractionsEnabled,
+        advanced: true,
         onResetCamera: () => resetCamera?.(),
     });
     const model_url = paramsa.get('model_url');
@@ -565,7 +565,7 @@ export default async function init(
     // const model_url = `${url_base}/bonsai_30000.ply`;
     resetCamera = () => applyCameraPreset(cameras[0]);
     applyCameraPreset(cameras[0]);
-    if (debugInteractionsEnabled) {
+    if (debugModeEnabled) {
         setupDebugInteractions({
             canvas,
             controls: control,
@@ -727,7 +727,7 @@ export default async function init(
                 (renderer as GaussianRenderers).requestReorder();
             });
         }
-        if (debugInteractionsEnabled) document.addEventListener('keydown', (event) => {
+        if (debugModeEnabled) document.addEventListener('keydown', (event) => {
             switch (event.key) {
                 case '0':
                 case '1':

@@ -17,12 +17,12 @@ export default async function init(
     const modelUrl = params.get('model_url') ?? DEFAULT_MODEL_URL;
     const cameraUrl = params.get('camera_url') ?? DEFAULT_CAMERA_URL;
     const shDegree = Math.max(0, Math.min(4, Number.parseInt(params.get('clip_sh_degree') ?? '0', 10) || 0));
-    const debugInteractionsEnabled = isDebugInteractionEnabled(params);
+    const debugModeEnabled = isDebugInteractionEnabled(params);
 
     const camera = new Camera(canvas, device);
     let resetCamera: (() => void) | undefined;
     const controls = new CameraControl(camera, {
-        advanced: debugInteractionsEnabled,
+        advanced: true,
         onResetCamera: () => resetCamera?.(),
     });
 
@@ -50,7 +50,7 @@ export default async function init(
     if (cameras.length === 0) throw new Error('No camera presets are available.');
     resetCamera = () => camera.set_preset(cameras[0]);
     camera.set_preset(cameras[0]);
-    if (debugInteractionsEnabled) {
+    if (debugModeEnabled) {
         setupDebugInteractions({
             canvas,
             controls,
